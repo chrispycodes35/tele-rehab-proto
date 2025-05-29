@@ -5,8 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { name: 'Patients', href: '/dashboard/patients' },
-  { name: 'Calendar', href: '/dashboard/calendar' },
+  { name: 'Patients', href: '/post-login/patients' },
+  { name: 'Calendar', href: '/post-login/calendar' },
 ];
 
 export function Header() {
@@ -20,11 +20,11 @@ export function Header() {
 
   return (
     <header className="border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center">
+      <div className="container mx-auto px-4 h-14 flex items-center">
         {/* Left section: TeleRehab + nav links + logout */}
         <div className="flex items-center space-x-6 flex-grow">
           <Link 
-            href="/dashboard" 
+            href="/post-login" 
             className="text-xl font-bold hover:text-primary transition-colors"
           >
             TeleRehab
