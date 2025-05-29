@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useFormState, useFormStatus } from 'react-dom';
 import { useEffect } from 'react';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,12 @@ import { Label } from '@/components/ui/label';
 import { authenticate } from '@/app/actions';
 import Link from 'next/link';
 
-const initialState = {
+type LoginFormState = {
+  error?: string;
+  success?: boolean;
+};
+
+const initialState: LoginFormState = {
   error: undefined,
   success: false,
 };
@@ -34,7 +40,8 @@ export function LoginForm({
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
   const router = useRouter();
-  const [state, formAction] = useFormState(authenticate, initialState);
+  const { pending } = useFormStatus();
+  const [state, formAction] = useActionState(authenticate, initialState);
 
   useEffect(() => {
     if (state.success) {
@@ -50,7 +57,11 @@ export function LoginForm({
           Enter your email below to login to your account
         </p>
       </div>
-      <form action={formAction} {...props}>
+      <form
+        className={className}
+        action={formAction}
+        {...props}
+      >
         <div className="grid gap-4">
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -62,7 +73,7 @@ export function LoginForm({
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
-              disabled={state.success}
+              disabled={pending}
               required
             />
           </div>
@@ -73,7 +84,7 @@ export function LoginForm({
               name="password"
               type="password"
               autoComplete="current-password"
-              disabled={state.success}
+              disabled={pending}
               required
             />
           </div>

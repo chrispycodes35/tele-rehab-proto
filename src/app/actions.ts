@@ -10,6 +10,7 @@ const loginSchema = z.object({
 export type LoginFormState = {
   error?: string;
   success?: boolean;
+  loading?: boolean;
 };
 
 export async function authenticate(
@@ -24,6 +25,7 @@ export async function authenticate(
   if (!validatedFields.success) {
     return {
       error: 'Invalid form data',
+      loading: false,
     };
   }
 
@@ -36,10 +38,11 @@ export async function authenticate(
     if (typeof window !== 'undefined') {
       localStorage.setItem('therapistId', email);
     }
-    return { success: true };
+    return { success: true, loading: false };
   }
 
   return {
     error: 'Invalid credentials',
+    loading: false,
   };
 } 

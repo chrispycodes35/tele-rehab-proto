@@ -1,10 +1,12 @@
-export default function CalendarPage() {
+import { CalendarShell } from '@/components/calendar/CalendarShell';
+import { mockFetchCalendarEvents } from '@/lib/mock/calendarData';
+
+export default async function CalendarPage() {
+  const events = await mockFetchCalendarEvents('therapist-1');
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-4">Calendar</h1>
-      <p className="text-muted-foreground">
-        Calendar management page coming soon...
-      </p>
+    <div className="container mx-auto">
+      <CalendarShell events={events} />
     </div>
   );
 } 
