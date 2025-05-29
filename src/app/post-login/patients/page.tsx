@@ -1,12 +1,17 @@
-export default function PatientsPage() {
+import PatientTable from '@/components/patient/PatientTable'
+import { mockFetchPatients } from '@/lib/mock/patientData'
+
+/** Server component – renders full roster table */
+export default async function PatientList() {
+  const patients = await mockFetchPatients('therapist-1')
+
+  if (!patients.length) {
+    return <p className="text-center text-gray-500 mt-20">No patients yet.</p>
+  }
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] pt-4 px-4 bg-white">
-      <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Patients</h1>
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-base md:text-lg text-muted-foreground">
-          Patient management page coming soon...
-        </p>
-      </div>
+    <div className="w-full overflow-auto rounded-lg shadow bg-white">
+      <PatientTable patients={patients} />
     </div>
-  );
+  )
 } 
