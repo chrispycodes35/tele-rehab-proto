@@ -151,47 +151,45 @@ interface CalendarEvent {
 ```typescript
 interface Patient {
   id: string;
+  mrn: string;
   name: string;
   dateOfBirth: string;
+  gender: string;
+  diagnosis: string[];
   strokeOnsetDate: string;
-  contactInfo: {
-    email: string;
-    phone: string;
-    emergencyContact: {
-      name: string;
-      relationship: string;
-      phone: string;
-    };
-  };
   assignedTherapistId: string;
   status: 'active' | 'inactive';
   lastVisit: string;
   nextAppointment: string;
   exerciseHistory: ExerciseSession[];
+  functionalTests: FunctionalTest[];
+  prescriptions: Prescription[];
+  education: Education[];
 }
 ```
 
 ### ExerciseSession
 ```typescript
+interface ExerciseAttempt {
+  date: string; // ISO date string
+  duration: number; // seconds
+}
+
 interface ExerciseSession {
   id: string;
-  patientId: string;
-  exerciseId: string;
-  date: string;
-  status: 'completed' | 'in_progress' | 'scheduled';
-  duration: number;
-  notes: string;
-  progress: number;
-  lastAttempt: {
-    date: string;
-    duration: number;
-    success: boolean;
-  };
-  averageTimeToComplete: number;
+  name: string;
+  category: string;
+  status: 'active' | 'inactive';
   frequency: {
     timesPerWeek: number;
     daysOfWeek: string[];
   };
+  totalRequired: number; // total number of times to complete
+  completedAttempts: ExerciseAttempt[];
+  lastAttempt: string; // ISO date string
+  averageTimeToComplete: number; // seconds
+  progress: number; // 0-1 (calculated as completedAttempts.length / totalRequired)
+  tasks: string[];
 }
 ```
 
@@ -381,6 +379,12 @@ interface CalendarEvent {
 - `DELETE /api/patients/:id` - Delete patient
 - `GET /api/patients/:id/history` - Get patient's complete history
 - `GET /api/patients/:id/progress` - Get patient's progress summary
+- `GET /api/patients/:id/functional-tests` - Get patient's functional tests
+- `POST /api/patients/:id/functional-tests` - Create new functional test for patient
+- `GET /api/patients/:id/prescriptions` - Get patient's prescriptions
+- `PUT /api/prescriptions/:id` - Update prescription
+- `GET /api/patients/:id/education` - Get patient's education
+- `POST /api/patients/:id/education/complete` - Mark education as complete
 
 ### Exercise Management
 - `GET /api/patients/:id/exercises` - Get patient's exercise history
@@ -504,3 +508,165 @@ interface ApiResponse<T> {
 5. Are there any specific security requirements?
 6. What monitoring and logging solutions do you recommend?
 7. How should we handle data backup and recovery?
+
+## Additional Notes
+- The backend should store detailed exercise attempt history (date, duration) for each exercise session to enable accurate progress tracking, analytics, and reporting.
+- Progress for an exercise is calculated as `completedAttempts.length / totalRequired`.
+- Average time to complete is calculated from the durations in `completedAttempts`.
+
+## 1. Are the two provided functions (`databaseFetch`, `databaseUpload`) sufficient?
+
+**No, they are not sufficient.**
+The frontend requires RESTful endpoints and richer data relationships than generic fetch/upload. The following endpoints are needed:
+
+### Required Endpoints
+
+#### Patient Management
+- `GET /api/patients?therapistId=...` — List all patients for a therapist
+- `GET /api/patients/:id` — Get a single patient profile (with exercise history)
+- `POST /api/patients` — Create a new patient
+- `PUT /api/patients/:id` — Update patient details
+- `DELETE /api/patients/:id` — Remove a patient
+
+#### Therapist-Patient Relationships
+- `GET /api/therapists/:id/patients` — List all patients assigned to a therapist
+- `POST /api/therapists/:id/patients` — Assign a patient to a therapist
+
+#### Exercise Management
+- `GET /api/patients/:id/exercises` — Get all exercise sessions for a patient
+- `POST /api/patients/:id/exercises` — Add a new exercise session
+- `PUT /api/exercises/:sessionId` — Update an exercise session (status, progress, attempts, etc.)
+
+#### Calendar & Scheduling
+- `GET /api/calendar/events?therapistId=...` — List all calendar events for a therapist
+- `POST /api/calendar/events` — Create a new event
+- `PUT /api/calendar/events/:id` — Update an event
+- `DELETE /api/calendar/events/:id` — Remove an event
+
+#### Authentication (for future)
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+
+---
+
+## 2. What kind of data needs to be stored?
+
+### a. Therapist-Patient Relationships (Many-to-Many)
+- A therapist can have many patients; a patient can be assigned to multiple therapists.
+- Store as a join table: `therapist_patient_relationships` with `therapistId`, `patientId`, `assignedDate`, `status`.
+
+### b. Patient Profiles (including exercise history and progress)
+- Store all patient demographic info, medical data, and exercise history.
+- Exercise history is an array of `ExerciseSession` objects, each with attempts, progress, and completion data.
+
+### c. Therapist Calendars and Scheduling
+- Store events (appointments, meetings, notes) with links to patients and therapists.
+- Each event should have type, status, time, and optional video/meeting info.
+
+---
+
+## 3. What data structures would you expect?
+
+### a. Patient Profile
+
+```typescript
+interface Patient {
+  id: string;
+  mrn: string;
+  name: string;
+  dateOfBirth: string; // ISO date
+  gender: string;
+  diagnosis: string[];
+  strokeOnsetDate: string; // ISO date
+  assignedTherapistId: string;
+  status: 'active' | 'inactive';
+  lastVisit: string; // ISO date
+  nextAppointment: string; // ISO date
+  exerciseHistory: ExerciseSession[];
+  // ...other fields (functionalTests, prescriptions, education)
+}
+```
+
+### b. Exercise Session History
+
+```typescript
+interface ExerciseAttempt {
+  date: string; // ISO date
+  duration: number; // seconds
+}
+
+interface ExerciseSession {
+  id: string;
+  name: string;
+  category: string;
+  status: 'active' | 'inactive';
+  frequency: {
+    timesPerWeek: number;
+    daysOfWeek: string[];
+  };
+  totalRequired: number;
+  completedAttempts: ExerciseAttempt[];
+  lastAttempt: string; // ISO date
+  averageTimeToComplete: number; // seconds
+  progress: number; // 0-1
+  tasks: string[];
+}
+```
+
+### c. Calendar Event or Task
+
+```typescript
+interface CalendarEvent {
+  id: string;
+  therapistId: string;
+  patientId?: string;
+  type: 'patient_chat' | 'team_meeting' | 'note' | 'assessment';
+  title: string;
+  description: string;
+  start: string; // ISO date
+  end: string;   // ISO date
+  status: 'scheduled' | 'completed' | 'cancelled';
+  location?: string;
+  attendees?: string[];
+  notes?: string;
+  followUpRequired: boolean;
+  meetingLink?: string;
+  meetingPlatform?: string;
+}
+```
+
+---
+
+## 4. Should it be JSON? Or as tables in SQL databases?
+
+- **API responses and requests:** Should be JSON, matching the above TypeScript interfaces.
+- **Backend storage:**  
+  - Use SQL tables for core entities (patients, therapists, exercises, events).
+  - Use join tables for many-to-many relationships (e.g., therapist-patient).
+  - Store arrays (like `exerciseHistory`) as related rows in a separate table (`exercise_sessions`), not as a JSON blob, for queryability and analytics.
+
+---
+
+## 5. System Architecture & API/Data Requirements
+
+- **Frontend** expects RESTful JSON APIs, with endpoints as above.
+- **Backend** should use normalized SQL tables for all major entities and relationships.
+- **Authentication** and **role-based access** are required for production.
+- **Data model** should match the TypeScript interfaces above, which are already used in the frontend mock data and types.
+- **All dates** should be stored and transmitted as ISO 8601 strings.
+
+---
+
+## 6. Summary Table
+
+| Area                | Requirement                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| API                 | RESTful, JSON, endpoints as above                                           |
+| Data Storage        | SQL tables for all entities, join tables for relationships                  |
+| Data Structures     | Match provided TypeScript interfaces                                        |
+| Relationships       | Many-to-many for therapist-patient, one-to-many for exercises, events       |
+| Authentication      | JWT or session-based, role-based access                                     |
+| Dates               | ISO 8601 strings                                                            |
+| Analytics           | Store exercise attempts as rows for progress tracking and reporting         |
+
