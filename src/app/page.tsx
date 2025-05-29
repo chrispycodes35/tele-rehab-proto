@@ -9,7 +9,7 @@ export default function RootPage() {
   useEffect(() => {
     const therapistId = typeof window !== 'undefined' && localStorage.getItem('therapistId');
     if (therapistId) {
-      router.replace('/dashboard');
+      router.replace('/post-login');
     } else {
       router.replace('/login');
     }

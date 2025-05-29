@@ -45,7 +45,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: #fff;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -119,4 +119,35 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Add custom event color classes */
+.event-patient {
+  background-color: #7533b4 !important;
+  border-color: #7533b4 !important;
+}
+
+.event-team-meeting {
+  background-color: #285cce !important;
+  border-color: #285cce !important;
+}
+
+.event-note {
+  background-color: #067641 !important;
+  border-color: #067641 !important;
+}
+
+.event-assessment {
+  background-color: #ca6800 !important;
+  border-color: #ca6800 !important;
+}
+
+/* Style for completed events */
+.event-completed {
+  opacity: 0.5 !important;
+}
+
+/* Add a soft background color for cards/components */
+.bg-soft {
+  background-color: #fff;
 }
